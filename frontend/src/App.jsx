@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -6,8 +7,10 @@ import KeyboardShortcuts from './components/KeyboardShortcuts';
 import LoginPage from './pages/LoginPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
 import ErrorPage from './pages/ErrorPage';
-import OwnerLayout from './pages/owner/OwnerLayout';
-import StaffLayout from './pages/staff/StaffLayout';
+import PageLoader from './components/PageLoader';
+
+const OwnerLayout = lazy(() => import('./pages/owner/OwnerLayout'));
+const StaffLayout = lazy(() => import('./pages/staff/StaffLayout'));
 
 function ProtectedRoute({ children, role }) {
   const { isLoggedIn, user } = useAuth();
@@ -33,10 +36,10 @@ function AppRoutes() {
         isLoggedIn ? <ChangePasswordPage /> : <Navigate to="/" replace />
       } />
       <Route path="/owner/*" element={
-        <ProtectedRoute role="owner"><OwnerLayout /></ProtectedRoute>
+        <ProtectedRoute role="owner"><Suspense fallback={<PageLoader />}><OwnerLayout /></Suspense></ProtectedRoute>
       } />
       <Route path="/staff/*" element={
-        <ProtectedRoute role="staff"><StaffLayout /></ProtectedRoute>
+        <ProtectedRoute role="staff"><Suspense fallback={<PageLoader />}><StaffLayout /></Suspense></ProtectedRoute>
       } />
       <Route path="*" element={<ErrorPage />} />
     </Routes>

@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const crypto = require('crypto');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -76,6 +77,35 @@ app.use(cors({
 
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(cookieParser());
+
+// ================= CSRF PROTECTION =================
+function generateCsrfToken() {
+    return crypto.randomBytes(32).toString('hex');
+}
+
+function csrfProtection(req, res, next) {
+    if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+    if (req.path === '/api/login' || req.path === '/api/change-password') return next();
+    const cookieToken = req.cookies?.csrf_token;
+    const headerToken = req.headers['x-csrf-token'];
+    if (!cookieToken || !headerToken || cookieToken !== headerToken) {
+        return res.status(403).json({ error: 'Invalid CSRF token' });
+    }
+    next();
+}
+
+app.get('/api/csrf-token', (req, res) => {
+    const token = generateCsrfToken();
+    res.cookie('csrf_token', token, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 86400000,
+    });
+    res.json({ csrfToken: token });
+});
+
+app.use(csrfProtection);
 
 const reactBuildPath = path.join(__dirname, 'frontend', 'dist');
 app.use(express.static(reactBuildPath));

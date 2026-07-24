@@ -31,6 +31,7 @@ export function AuthProvider({ children }) {
       localStorage.setItem('fullname', res.fullname);
       localStorage.setItem('mustChangePassword', String(!!res.mustChangePassword));
       setUser({ role: res.role, name: res.fullname, token: res.token, mustChangePassword: !!res.mustChangePassword });
+      api.fetchCsrfToken();
       return { success: true, redirect: res.redirect, mustChangePassword: !!res.mustChangePassword };
     }
     return { success: false, message: res?.message || 'Login failed' };
@@ -41,6 +42,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('user_role');
     localStorage.removeItem('fullname');
     localStorage.removeItem('mustChangePassword');
+    localStorage.removeItem('csrf_token');
     setUser({ role: null, name: null, token: null, mustChangePassword: false });
   }, []);
 
