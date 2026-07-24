@@ -20,6 +20,12 @@ export function AuthProvider({ children }) {
 
   const isLoggedIn = !!user.token;
 
+  useEffect(() => {
+    if (isLoggedIn && !localStorage.getItem('csrf_token')) {
+      api.fetchCsrfToken();
+    }
+  }, [isLoggedIn]);
+
   const login = async (username, password, expectedRole) => {
     const res = await api.post('login', { username, password, expectedRole });
     if (res?.success && expectedRole && res.role !== expectedRole) {
