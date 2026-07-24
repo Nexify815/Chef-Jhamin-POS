@@ -26,14 +26,16 @@ export default function StaffHome() {
   const [summary, setSummary] = useState({ totalSales: 0, ordersCount: 0, totalExpenses: 0 });
   const [recentSales, setRecentSales] = useState([]);
   const [lowStock, setLowStock] = useState([]);
+  const [clockStatus, setClockStatus] = useState(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [dashRes, salesRes, invRes] = await Promise.all([
+      const [dashRes, salesRes, invRes, clockRes] = await Promise.all([
         api.get('reports/dashboard'),
         api.get(`sales?date=${today()}`),
         api.get('ingredients'),
+        api.get('clock-status'),
       ]);
 
       const todayStr = today();
@@ -49,6 +51,7 @@ export default function StaffHome() {
 
       const inv = Array.isArray(invRes) ? invRes : [];
       setLowStock(inv.filter((item) => item.reorder_level && item.stock <= item.reorder_level));
+      setClockStatus(clockRes);
     } catch (e) {
       console.error('Dashboard fetch error:', e);
     } finally {
@@ -80,13 +83,29 @@ export default function StaffHome() {
           <h1 className="text-2xl font-bold text-white">Welcome, {user?.name}</h1>
           <p className="text-gray-400 text-sm">{dateStr}</p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={openClockIn} className="btn-primary flex items-center gap-2">
-            <i className="fa-solid fa-clock" /> Clock In
-          </button>
-          <button onClick={openClockOut} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-orange-500/30 text-orange-400 hover:bg-orange-500/10 transition-all cursor-pointer text-sm font-medium">
-            <i className="fa-solid fa-right-from-bracket" /> Clock Out
-          </button>
+        <div className="flex items-center gap-3">
+          {clockStatus && (
+            <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium ${
+              clockStatus.clockedIn
+                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                : 'bg-gray-500/15 text-gray-400 border border-gray-500/30'
+            }`}>
+              <span className={`w-2.5 h-2.5 rounded-full ${clockStatus.clockedIn ? 'bg-emerald-400 animate-pulse' : 'bg-gray-500'}`} />
+              {clockStatus.clockedIn
+                ? `Clocked In · ${clockStatus.timeIn} · ${clockStatus.shift}`
+                : clockStatus.timeOut
+                  ? `Clocked Out · ${clockStatus.hours}h worked today`
+                  : 'Not Clocked In'}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <button onClick={openClockIn} className="btn-primary flex items-center gap-2">
+              <i className="fa-solid fa-clock" /> Clock In
+            </button>
+            <button onClick={openClockOut} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-orange-500/30 text-orange-400 hover:bg-orange-500/10 transition-all cursor-pointer text-sm font-medium">
+              <i className="fa-solid fa-right-from-bracket" /> Clock Out
+            </button>
+          </div>
         </div>
       </div>
 

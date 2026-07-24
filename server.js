@@ -973,6 +973,28 @@ app.post('/api/clockout', authenticateToken, async (req, res) => {
     }
 });
 
+app.get('/api/clock-status', authenticateToken, async (req, res) => {
+    const name = req.user?.name;
+    if (!name) return res.json({ clockedIn: false });
+
+    const date = new Date().toISOString().split('T')[0];
+    try {
+        const row = await dbGet(
+            "SELECT * FROM staff_logs WHERE name = $1 AND date = $2 AND status = 'Open'", [name, date]
+        );
+        if (row) {
+            res.json({ clockedIn: true, timeIn: row.timeIn, shift: row.shift, task: row.task });
+        } else {
+            const lastLog = await dbGet(
+                "SELECT * FROM staff_logs WHERE name = $1 AND date = $2 AND status = 'Closed' ORDER BY id DESC LIMIT 1", [name, date]
+            );
+            res.json({ clockedIn: false, timeOut: lastLog?.timeOut || null, hours: lastLog?.hours || null });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.get('/api/staff', authenticateToken, async (req, res) => {
     const limit = parseInt(req.query.limit) || 50;
     const offset = parseInt(req.query.offset) || 0;
