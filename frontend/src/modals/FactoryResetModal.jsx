@@ -5,8 +5,10 @@ export default function FactoryResetModal({ onConfirm, onClose }) {
   const [input, setInput] = useState('');
 
   return (
-    <div className="glass-card p-6 max-w-md w-full" onClick={e => e.stopPropagation()}>
-      <div className="flex items-center gap-3 mb-4">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 anim-fade-in">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm anim-fade-in" onClick={onClose} />
+      <div className="glass-card p-6 max-w-md w-full relative anim-scale-in" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-3 mb-4">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.15)' }}>
           <i className="fas fa-exclamation-triangle text-red-400" />
         </div>
@@ -34,6 +36,7 @@ export default function FactoryResetModal({ onConfirm, onClose }) {
         >
           <i className="fas fa-trash mr-2" />Factory Reset
         </button>
+      </div>
       </div>
     </div>
   );

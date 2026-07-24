@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 
 const ModalContext = createContext(null);
 
@@ -60,9 +61,9 @@ export function ModalProvider({ children }) {
     <ModalContext.Provider value={{ showAlert, showConfirm, openModal, closeModal }}>
       {children}
 
-      {modal.open && modal.mode === 'custom' && customContent}
+      {modal.open && modal.mode === 'custom' && createPortal(customContent, document.body)}
 
-      {modal.open && modal.mode !== 'custom' && (
+      {modal.open && modal.mode !== 'custom' && createPortal(
         <div
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4 anim-fade-in"
           onClick={modal.mode === 'alert' ? handleAlertOk : undefined}
@@ -116,7 +117,8 @@ export function ModalProvider({ children }) {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </ModalContext.Provider>
   );
