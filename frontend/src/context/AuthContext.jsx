@@ -72,7 +72,7 @@ export function AuthProvider({ children }) {
       setMenuItems(Array.isArray(menuRes) ? menuRes : []);
       setIngredients(Array.isArray(ingRes) ? ingRes : []);
       setExtras(Array.isArray(extRes) ? extRes : []);
-      setSettings(settingsRes && typeof settingsRes === 'object' && !Array.isArray(settingsRes) && !settingsRes.success === false ? settingsRes : {});
+      setSettings(settingsRes && typeof settingsRes === 'object' && !Array.isArray(settingsRes) ? settingsRes : {});
 
       if (user.role === 'owner') {
         const usersRes = await api.get('users');
