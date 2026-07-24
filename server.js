@@ -1561,7 +1561,7 @@ app.post('/api/danger/factory-reset', authenticateToken, requireRole('owner'), a
         await dbRun("UPDATE sales SET deleted=1, deleted_at=CURRENT_TIMESTAMP");
         await dbRun("UPDATE expenses SET deleted=1, deleted_at=CURRENT_TIMESTAMP");
         await dbRun("UPDATE staff_logs SET deleted=1, deleted_at=CURRENT_TIMESTAMP");
-        await dbRun("UPDATE inventory_logs SET deleted=1, deleted_at=CURRENT_TIMESTAMP");
+        await dbRun("DELETE FROM inventory_logs");
         await dbRun("DELETE FROM notifications");
         await auditLog('DANGER_FACTORY_RESET', null, null, 'Factory reset performed', null, null, req.user?.name);
         res.json({ success: true });
