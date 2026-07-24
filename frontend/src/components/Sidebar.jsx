@@ -49,6 +49,16 @@ export default function Sidebar({ role, activePage, onNavigate, onLogout, isOpen
             <p className="text-[11px] tracking-wider uppercase mt-0.5" style={{ color: 'var(--text-dim)' }}>Management System</p>
           </div>
           <div className="flex items-center gap-1">
+            <button
+              onClick={() => window.location.reload()}
+              className="w-8 h-8 flex items-center justify-center rounded-lg transition-all cursor-pointer"
+              style={{ color: 'var(--text-muted)' }}
+              onMouseEnter={e => { e.currentTarget.style.color = 'var(--teal)'; e.currentTarget.style.background = 'rgba(20,184,166,0.10)'; }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'; }}
+              title="Refresh"
+            >
+              <i className="fas fa-rotate text-sm" />
+            </button>
             <ThemeToggle />
             <NotificationPanel />
           </div>
