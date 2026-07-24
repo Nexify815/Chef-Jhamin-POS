@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: chef-jhamin-kitchen
+    runtime: node
+    plan: free
+    buildCommand: npm install && cd frontend && npm install && npm run build
+    startCommand: node server.js
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: NODE_ENV
+        value: production
+      - key: CORS_ORIGIN
+        sync: false
