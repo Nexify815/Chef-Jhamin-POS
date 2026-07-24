@@ -4,6 +4,87 @@
 
 ---
 
+## 6. COMPLETED: Deployment + PWA + Bug Fixes (July 24)
+
+### Render Deployment
+
+- **Repo:** https://github.com/Nexify815/Chef-Jhamin-POS.git
+- **Live URL:** https://chef-jhamin-pos.onrender.com
+- **Platform:** Render (Free tier)
+- **Keep-alive:** cron-job.org pinging every 10 min
+
+**render.yaml build command:** `npm install && cd frontend && npm install --include=dev && npm run build`
+
+**Environment Variables (set in Render dashboard):**
+- `DATABASE_URL` = Neon connection string (with ?sslmode=require)
+- `SECRET_KEY` = chef-jhamin-secret-2025-change-in-prod
+- `NODE_ENV` = production
+- `CORS_ORIGIN` = https://chef-jhamin-pos.onrender.com
+
+**Build Notes:**
+- Render sets NODE_ENV=production which skips devDependencies so vite not found
+- Fix: `npm install --include=dev` in the frontend directory
+- Render caches build commands from initial setup - must update manually in Settings if render.yaml changes
+- Frontend build script also updated to `npx vite build` as backup
+- Node.js 24.14.1 works fine
+
+### PWA (Progressive Web App)
+
+**Files created:**
+- `frontend/public/manifest.json` - App name, theme color, display standalone
+- `frontend/public/sw.js` - Service worker (navigation-only caching, CDN assets pass through)
+- `frontend/public/icon-512.svg` - Teal CJ logo icon
+
+**Updated:**
+- `frontend/index.html` - Added manifest link, apple-mobile-web-app tags, icon links
+- `frontend/src/main.jsx` - Service worker registration
+
+**Service Worker Strategy:**
+- Only caches navigation requests (page loads)
+- CDN assets (Font Awesome, Google Fonts) pass through directly to prevent icon breaking
+- API requests are never cached
+- If icons break, unregister old SW in DevTools > Application > Service Workers, then hard refresh
+
+### Bug Fixes (July 24)
+
+**1. Factory Reset Modal Behind Sidebar**
+- Bug: position:fixed on modal broken by transform on ancestor (pageEnter animation)
+- Fix: Portaled all modals to document.body via createPortal in Modal.jsx
+- Also: FactoryResetModal had no overlay wrapper - added fixed inset-0 backdrop + anim-scale-in
+
+**2. Factory Reset - inventory_logs Column Error**
+- Bug: UPDATE inventory_logs SET deleted=1 failed because table has no deleted column
+- Fix: Changed to DELETE FROM inventory_logs (hard delete)
+
+**3. Service Worker Breaking Font Awesome Icons**
+- Bug: SW was caching ALL fetch responses including CDN CSS/fonts
+- Fix: Rewrote SW to only handle navigation requests. All static assets pass through
+
+### Clock Status Indicator (Staff Dashboard)
+
+**New backend endpoint:** GET /api/clock-status
+- Returns { clockedIn: true, timeIn, shift, task } if currently clocked in
+- Returns { clockedIn: false, timeOut, hours } if clocked out today
+- Returns { clockedIn: false } if never clocked in today
+
+**StaffHome.jsx updated:**
+- Fetches clock status on load alongside dashboard data
+- Shows status badge: green pulsing dot when clocked in, gray when out
+- Auto-updates after clock in/out actions
+
+### Git Setup
+- **Email:** kissijames42@gmail.com
+- **Name:** James Kisi
+- **Branch:** main
+- Auto-deploy on push enabled in Render
+
+### Render Free Tier Limits
+- 750 instance hours/month (24/7 = ~744 hours)
+- One service fits. Two services = suspended until next month
+- Re-deploys consume extra hours (brief instance spin-up)
+
+---
+
 ## 5. COMPLETED: Feature Gap Fixes + Audit Log Expansion (July 24)
 
 ### 15-Point Feature Audit & Fixes
@@ -423,3 +504,36 @@ Research completed on Loyverse POS features. Comparison with current system:
 - Begin Discounts & Refunds feature (next feature per user)
 - Optional: Clean up dead code (exportExcel.js, DataTable.jsx, Badge.jsx)
 - Optional: Add request timeout to api.js
+
+---
+
+## HOW TO DEPLOY (After Making Changes)
+
+### Quick Deploy (99% of the time)
+1. Make changes to code
+2. Open terminal in project root
+3. Run: `git add -A && git commit -m "description of change" && git push`
+4. Render auto-deploys in ~2-3 minutes
+
+### If Build Fails
+1. Check Render deploy logs for the error
+2. Common issues:
+   - `vite: not found` -> Make sure build command has `--include=dev`
+   - `CORS_ORIGIN` not set -> Add it in Render Environment tab
+   - Database connection failed -> Check DATABASE_URL in Render env vars
+3. Fix the code, commit, push again
+
+### Manual Deploy (if auto-deploy is off)
+1. Go to https://dashboard.render.com
+2. Click your service
+3. Click Manual Deploy > Deploy latest commit
+
+### Environment Variables (if changing)
+1. Go to Render dashboard > your service > Environment
+2. Edit/add variables
+3. Save changes (triggers auto-deploy)
+
+### If App Shows Blank or Icons Missing
+1. Hard refresh: Ctrl+Shift+R (desktop) or clear mobile browser cache
+2. If installed as PWA: Remove from home screen, re-add
+3. If still broken: Open DevTools > Application > Service Workers > Unregister, then refresh
