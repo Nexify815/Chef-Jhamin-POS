@@ -21,6 +21,7 @@ const ownerNav = [
   { id: 'settings', label: 'Settings', icon: 'fas fa-gear' },
   { id: 'audit-log', label: 'Audit Log', icon: 'fas fa-history' },
   { id: 'import-export', label: 'Import/Export', icon: 'fas fa-file-import' },
+  { id: 'help', label: 'Help Guide', icon: 'fas fa-circle-question' },
 ];
 
 const staffNav = [

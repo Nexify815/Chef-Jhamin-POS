@@ -22,6 +22,7 @@ import Suppliers from './Suppliers';
 import Customers from './Customers';
 import AuditLog from './AuditLog';
 import ImportExport from './ImportExport';
+import HelpPage from './HelpPage';
 
 const routeToSidebar = {
   dashboard: 'dashboard',
@@ -41,6 +42,7 @@ const routeToSidebar = {
   customers: 'customers',
   'audit-log': 'audit-log',
   'import-export': 'import-export',
+  help: 'help',
 };
 
 export default function OwnerLayout() {
@@ -99,6 +101,7 @@ export default function OwnerLayout() {
             <Route path="customers" element={<Customers />} />
             <Route path="audit-log" element={<AuditLog />} />
             <Route path="import-export" element={<ImportExport />} />
+            <Route path="help" element={<HelpPage />} />
           </Routes>
         </ErrorBoundary>
       </main>
