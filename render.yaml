@@ -3,7 +3,7 @@ services:
     name: chef-jhamin-kitchen
     runtime: node
     plan: free
-    buildCommand: npm install && cd frontend && npm install && npm run build
+    buildCommand: npm install && cd frontend && npm install --include=dev && npm run build
     startCommand: node server.js
     envVars:
       - key: DATABASE_URL
