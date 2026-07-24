@@ -5,6 +5,8 @@ import Sidebar from '../../components/Sidebar';
 import BottomNav from '../../components/BottomNav';
 import HamburgerButton from '../../components/HamburgerButton';
 import ErrorBoundary from '../../components/ErrorBoundary';
+import OfflineBanner from '../../components/OfflineBanner';
+import useNetworkStatus from '../../hooks/useNetworkStatus';
 import Dashboard from './Dashboard';
 import Sales from './Sales';
 import Expenses from './Expenses';
@@ -50,12 +52,14 @@ export default function OwnerLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { isOnline, pendingSync } = useNetworkStatus();
 
   const pathSegment = location.pathname.split('/owner/')[1] || 'dashboard';
   const activePage = routeToSidebar[pathSegment] || 'dashboard';
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-page)' }}>
+      <OfflineBanner isOnline={isOnline} pendingSync={pendingSync} />
       <HamburgerButton onClick={() => setSidebarOpen(!sidebarOpen)} />
 
       {sidebarOpen && (

@@ -5,6 +5,8 @@ import Sidebar from '../../components/Sidebar';
 import BottomNav from '../../components/BottomNav';
 import HamburgerButton from '../../components/HamburgerButton';
 import ErrorBoundary from '../../components/ErrorBoundary';
+import OfflineBanner from '../../components/OfflineBanner';
+import useNetworkStatus from '../../hooks/useNetworkStatus';
 import StaffTour, { useStaffTour } from '../../components/StaffTour';
 import StaffHome from './StaffHome';
 import StaffSales from './StaffSales';
@@ -18,11 +20,13 @@ export default function StaffLayout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { showTour, startTour, endTour } = useStaffTour();
+  const { isOnline, pendingSync } = useNetworkStatus();
 
   const pathSegment = location.pathname.split('/staff/')[1] || 'home';
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-page)' }}>
+      <OfflineBanner isOnline={isOnline} pendingSync={pendingSync} />
       <StaffTour show={showTour} onComplete={endTour} />
       <HamburgerButton onClick={() => setSidebarOpen(!sidebarOpen)} />
       {sidebarOpen && (

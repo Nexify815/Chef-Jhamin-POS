@@ -9,7 +9,7 @@ const path = require('path');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
-const { pool, dbRun, dbGet, dbAll, initDB } = require('./db');
+const { pool, dbRun, dbGet, dbAll, initDB, getClient } = require('./db');
 
 if (!process.env.SECRET_KEY) {
     console.error('FATAL: SECRET_KEY environment variable is required. Set it in your .env file.');
@@ -1066,7 +1066,9 @@ app.get('/api/reports/dashboard', authenticateToken, async (req, res) => {
         ) || [];
 
         const weekly = await dbGet(
-            "SELECT SUM(total) as total FROM sales WHERE date >= (CURRENT_DATE - INTERVAL '6 days')::text AND deleted = 0"
+            process.env.DATABASE_URL
+                ? "SELECT SUM(total) as total FROM sales WHERE date >= (CURRENT_DATE - INTERVAL '6 days')::text AND deleted = 0"
+                : "SELECT SUM(total) as total FROM sales WHERE date >= date('now', '-6 days') AND deleted = 0"
         ) || { total: 0 };
 
         const lowStock = await dbGet(
@@ -1074,9 +1076,19 @@ app.get('/api/reports/dashboard', authenticateToken, async (req, res) => {
         ) || { count: 0 };
 
         const chartData = await dbAll(
-            `SELECT date, SUM(total) as total FROM sales
-             WHERE date >= (CURRENT_DATE - INTERVAL '6 days')::text AND deleted = 0
-             GROUP BY date ORDER BY date`
+            process.env.DATABASE_URL
+                ? `SELECT d.date, COALESCE(s.total, 0) as total, COALESCE(e.total, 0) as expenses
+                   FROM (SELECT DISTINCT date FROM sales WHERE date >= (CURRENT_DATE - INTERVAL '6 days')::text AND deleted = 0
+                         UNION SELECT DISTINCT date FROM expenses WHERE date >= (CURRENT_DATE - INTERVAL '6 days')::text) d
+                   LEFT JOIN (SELECT date, SUM(total) as total FROM sales WHERE deleted = 0 GROUP BY date) s ON s.date = d.date
+                   LEFT JOIN (SELECT date, SUM(amount) as total FROM expenses GROUP BY date) e ON e.date = d.date
+                   ORDER BY d.date`
+                : `SELECT d.date, COALESCE(s.total, 0) as total, COALESCE(e.total, 0) as expenses
+                   FROM (SELECT DISTINCT date FROM sales WHERE date >= date('now', '-6 days') AND deleted = 0
+                         UNION SELECT DISTINCT date FROM expenses WHERE date >= date('now', '-6 days')) d
+                   LEFT JOIN (SELECT date, SUM(total) as total FROM sales WHERE deleted = 0 GROUP BY date) s ON s.date = d.date
+                   LEFT JOIN (SELECT date, SUM(amount) as total FROM expenses GROUP BY date) e ON e.date = d.date
+                   ORDER BY d.date`
         ) || [];
 
         const staffActivity = await dbAll(
@@ -1100,12 +1112,20 @@ app.get('/api/reports/weekly', authenticateToken, async (req, res) => {
 
     try {
         const salesResult = await dbGet(
-            `SELECT SUM(total) as total FROM sales
-             WHERE date >= $1 AND date < ($1::date + INTERVAL '7 days')::text AND deleted = 0`, [startDate]
+            process.env.DATABASE_URL
+                ? `SELECT SUM(total) as total FROM sales
+                   WHERE date >= $1 AND date < ($1::date + INTERVAL '7 days')::text AND deleted = 0`
+                : `SELECT SUM(total) as total FROM sales
+                   WHERE date >= $1 AND date < date($1, '+7 days') AND deleted = 0`,
+            [startDate]
         );
         const expensesResult = await dbGet(
-            `SELECT SUM(amount) as total FROM expenses
-             WHERE date >= $1 AND date < ($1::date + INTERVAL '7 days')::text`, [startDate]
+            process.env.DATABASE_URL
+                ? `SELECT SUM(amount) as total FROM expenses
+                   WHERE date >= $1 AND date < ($1::date + INTERVAL '7 days')::text`
+                : `SELECT SUM(amount) as total FROM expenses
+                   WHERE date >= $1 AND date < date($1, '+7 days')`,
+            [startDate]
         );
 
         res.json({ sales: salesResult?.total || 0, expenses: expensesResult?.total || 0 });
@@ -1341,19 +1361,33 @@ app.get('/api/reports/weekly', authenticateToken, async (req, res) => {
     const startDate = req.query.start;
     if (!startDate) return res.status(400).json({ success: false, message: "Start date required" });
     try {
+        const pg = !!process.env.DATABASE_URL;
         const salesResult = await dbGet(
-            `SELECT SUM(total) as total FROM sales WHERE date >= $1 AND date < ($1::date + INTERVAL '7 days')::text AND deleted = 0`, [startDate]
+            pg
+                ? `SELECT SUM(total) as total FROM sales WHERE date >= $1 AND date < ($1::date + INTERVAL '7 days')::text AND deleted = 0`
+                : `SELECT SUM(total) as total FROM sales WHERE date >= $1 AND date < date($1, '+7 days') AND deleted = 0`,
+            [startDate]
         );
         const expensesResult = await dbGet(
-            `SELECT SUM(amount) as total FROM expenses WHERE date >= $1 AND date < ($1::date + INTERVAL '7 days')::text`, [startDate]
+            pg
+                ? `SELECT SUM(amount) as total FROM expenses WHERE date >= $1 AND date < ($1::date + INTERVAL '7 days')::text`
+                : `SELECT SUM(amount) as total FROM expenses WHERE date >= $1 AND date < date($1, '+7 days')`,
+            [startDate]
         );
         // Food cost: sum of ingredient costs used in sales that week
         const costResult = await dbGet(
-            `SELECT COALESCE(SUM(il.change_amount * -1 * i.cost_per_unit), 0) as total
-             FROM inventory_logs il
-             JOIN ingredients i ON il.ingredient_id = i.id
-             WHERE il.date >= $1 AND il.date < ($1::date + INTERVAL '7 days')::text
-             AND il.change_amount < 0`, [startDate]
+            pg
+                ? `SELECT COALESCE(SUM(il.change_amount * -1 * i.cost_per_unit), 0) as total
+                   FROM inventory_logs il
+                   JOIN ingredients i ON il.ingredient_id = i.id
+                   WHERE il.date >= $1 AND il.date < ($1::date + INTERVAL '7 days')::text
+                   AND il.change_amount < 0`
+                : `SELECT COALESCE(SUM(il.change_amount * -1 * i.cost_per_unit), 0) as total
+                   FROM inventory_logs il
+                   JOIN ingredients i ON il.ingredient_id = i.id
+                   WHERE il.date >= $1 AND il.date < date($1, '+7 days')
+                   AND il.change_amount < 0`,
+            [startDate]
         );
         res.json({
             sales: salesResult?.total || 0,
@@ -1570,7 +1604,7 @@ bulkDeleteRoutes.forEach(({ path, table, role }) => {
         return res.status(400).json({ error: 'ids array required' });
       }
       const placeholders = ids.map((_, i) => `$${i + 1}`).join(',');
-      await pool.query(`UPDATE ${table} SET deleted=1, deleted_at=CURRENT_TIMESTAMP WHERE id IN (${placeholders})`, ids);
+      await dbRun(`UPDATE ${table} SET deleted=1, deleted_at=CURRENT_TIMESTAMP WHERE id IN (${placeholders})`, ids);
       res.json({ success: true, deleted: ids.length });
     } catch (err) {
       console.error(`Bulk delete ${table} error:`, err);
@@ -1726,7 +1760,7 @@ app.post('/api/import/full-backup', authenticateToken, requireRole('owner'), asy
         notifications: data.notifications,
     };
 
-    const client = await pool.connect();
+    const client = await getClient();
     try {
         await client.query("BEGIN");
 
@@ -1746,10 +1780,17 @@ app.post('/api/import/full-backup', authenticateToken, requireRole('owner'), asy
                 return raw;
             });
             const ph = vals.map((_, i) => `$${i + 1}`).join(',');
-            await client.query(
-                `INSERT INTO ${table} (${cols.join(',')}) VALUES (${ph}) ON CONFLICT (id) DO UPDATE SET ${cols.filter(c => c !== 'id').map(c => `${c} = EXCLUDED.${c}`).join(',')}`,
-                vals
-            );
+            if (process.env.DATABASE_URL) {
+                await client.query(
+                    `INSERT INTO ${table} (${cols.join(',')}) VALUES (${ph}) ON CONFLICT (id) DO UPDATE SET ${cols.filter(c => c !== 'id').map(c => `${c} = EXCLUDED.${c}`).join(',')}`,
+                    vals
+                );
+            } else {
+                await client.query(
+                    `INSERT OR REPLACE INTO ${table} (${cols.join(',')}) VALUES (${ph})`,
+                    vals
+                );
+            }
         };
 
         // Insert parent tables first, then children
@@ -1795,14 +1836,16 @@ app.post('/api/import/full-backup', authenticateToken, requireRole('owner'), asy
             for (const n of tables.notifications) await insertRow('notifications', ['id','type','title','message','ingredient_id','current_stock','reorder_level','is_read'], n);
         }
 
-        // Reset sequences to max(id) + 1 for each table
-        for (const t of allTables) {
-            const maxRes = await client.query(`SELECT COALESCE(MAX(id), 0) as max_id FROM ${t}`);
-            const maxId = parseInt(maxRes.rows[0].max_id);
-            if (maxId > 0) {
-                const seqRes = await client.query(`SELECT pg_get_serial_sequence('${t}', 'id') as seq`);
-                if (seqRes.rows[0].seq) {
-                    await client.query(`SELECT setval('${seqRes.rows[0].seq}', (SELECT COALESCE(MAX(id), 0) + 1 FROM ${t}))`);
+        // Reset sequences to max(id) + 1 for each table (PostgreSQL only)
+        if (process.env.DATABASE_URL) {
+            for (const t of allTables) {
+                const maxRes = await client.query(`SELECT COALESCE(MAX(id), 0) as max_id FROM ${t}`);
+                const maxId = parseInt(maxRes.rows[0].max_id);
+                if (maxId > 0) {
+                    const seqRes = await client.query(`SELECT pg_get_serial_sequence('${t}', 'id') as seq`);
+                    if (seqRes.rows[0].seq) {
+                        await client.query(`SELECT setval('${seqRes.rows[0].seq}', (SELECT COALESCE(MAX(id), 0) + 1 FROM ${t}))`);
+                    }
                 }
             }
         }

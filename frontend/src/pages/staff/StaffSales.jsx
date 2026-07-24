@@ -10,6 +10,7 @@ import useTableSelection from '../../hooks/useTableSelection';
 import BulkActionsBar from '../../components/BulkActionsBar';
 import PageLoader from '../../components/PageLoader';
 import { today, fmt, parseExtras } from '../../utils/helpers';
+import { enqueue } from '../../utils/offlineQueue';
 
 const defaultForm = () => ({
   date: today(),
@@ -110,7 +111,7 @@ export default function StaffSales() {
         : form.extras.length > 0
           ? JSON.stringify(form.extras)
           : '';
-      await api.post('sales', {
+      const salePayload = {
         date: form.date,
         staff: form.staff,
         item: form.item,
@@ -123,7 +124,14 @@ export default function StaffSales() {
         total: form.total,
         customer_name: form.customer_name || '',
         discount: Number(form.discount || 0),
-      });
+      };
+
+      if (!navigator.onLine) {
+        enqueue({ endpoint: 'sales', body: salePayload });
+        showAlert('success', 'Queued', 'Sale saved offline — will sync when you reconnect.');
+      } else {
+        await api.post('sales', salePayload);
+      }
       setForm(defaultForm());
       setForm((prev) => ({ ...prev, staff: user?.name || '' }));
       fetchData();
