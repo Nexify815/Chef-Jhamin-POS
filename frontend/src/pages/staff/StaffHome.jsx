@@ -78,14 +78,14 @@ export default function StaffHome() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div id="tour-welcome" className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Welcome, {user?.name}</h1>
           <p className="text-gray-400 text-sm">{dateStr}</p>
         </div>
         <div className="flex items-center gap-3">
           {clockStatus && (
-            <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium ${
+            <div id="tour-clock-status" className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium ${
               clockStatus.clockedIn
                 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
                 : 'bg-gray-500/15 text-gray-400 border border-gray-500/30'
@@ -98,7 +98,7 @@ export default function StaffHome() {
                   : 'Not Clocked In'}
             </div>
           )}
-          <div className="flex gap-2">
+          <div id="tour-clock-buttons" className="flex gap-2">
             <button onClick={openClockIn} className="btn-primary flex items-center gap-2">
               <i className="fa-solid fa-clock" /> Clock In
             </button>
@@ -141,17 +141,17 @@ export default function StaffHome() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <button onClick={() => navigate('/staff/sales')} className="glass-card p-5 text-left hover:bg-teal/[0.05] transition cursor-pointer">
+        <button id="tour-sales-card" onClick={() => navigate('/staff/sales')} className="glass-card p-5 text-left hover:bg-teal/[0.05] transition cursor-pointer">
           <i className="fa-solid fa-cash-register text-emerald-400 text-xl mb-2" />
           <div className="text-white font-semibold">Record Sale</div>
           <div className="text-gray-400 text-xs">Add a new sale entry</div>
         </button>
-        <button onClick={() => navigate('/staff/expenses')} className="glass-card p-5 text-left hover:bg-teal/[0.05] transition cursor-pointer">
+        <button id="tour-expense-card" onClick={() => navigate('/staff/expenses')} className="glass-card p-5 text-left hover:bg-teal/[0.05] transition cursor-pointer">
           <i className="fa-solid fa-receipt text-orange-400 text-xl mb-2" />
           <div className="text-white font-semibold">Add Expense</div>
           <div className="text-gray-400 text-xs">Log an expense</div>
         </button>
-        <button onClick={() => navigate('/staff/inventory')} className="glass-card p-5 text-left hover:bg-teal/[0.05] transition cursor-pointer">
+        <button id="tour-inventory-card" onClick={() => navigate('/staff/inventory')} className="glass-card p-5 text-left hover:bg-teal/[0.05] transition cursor-pointer">
           <i className="fa-solid fa-boxes-stacked text-blue-400 text-xl mb-2" />
           <div className="text-white font-semibold">Inventory</div>
           <div className="text-gray-400 text-xs">View & update stock</div>

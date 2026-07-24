@@ -5,6 +5,7 @@ import Sidebar from '../../components/Sidebar';
 import BottomNav from '../../components/BottomNav';
 import HamburgerButton from '../../components/HamburgerButton';
 import ErrorBoundary from '../../components/ErrorBoundary';
+import StaffTour, { useStaffTour } from '../../components/StaffTour';
 import StaffHome from './StaffHome';
 import StaffSales from './StaffSales';
 import StaffExpenses from './StaffExpenses';
@@ -16,11 +17,13 @@ export default function StaffLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { showTour, startTour, endTour } = useStaffTour();
 
   const pathSegment = location.pathname.split('/staff/')[1] || 'home';
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-page)' }}>
+      <StaffTour show={showTour} onComplete={endTour} />
       <HamburgerButton onClick={() => setSidebarOpen(!sidebarOpen)} />
       {sidebarOpen && (
         <div
@@ -37,6 +40,7 @@ export default function StaffLayout() {
           navigate(`/staff/${page}`);
           setSidebarOpen(false);
         }}
+        onReplayTour={startTour}
         onLogout={() => {
           logout();
           navigate('/');

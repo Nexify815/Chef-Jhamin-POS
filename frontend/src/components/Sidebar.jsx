@@ -31,7 +31,7 @@ const staffNav = [
   { id: 'time-clock', label: 'Time Clock', icon: 'fas fa-clock' },
 ];
 
-export default function Sidebar({ role, activePage, onNavigate, onLogout, isOpen, onToggle }) {
+export default function Sidebar({ role, activePage, onNavigate, onLogout, isOpen, onToggle, onReplayTour }) {
   const { settings } = useAuth();
   const { showConfirm } = useModal();
   const navItems = role === 'owner' ? ownerNav : staffNav;
@@ -86,6 +86,18 @@ export default function Sidebar({ role, activePage, onNavigate, onLogout, isOpen
       </nav>
 
       <div className="px-3 py-4" style={{ borderTop: '1px solid var(--border-color)' }}>
+        {role === 'staff' && onReplayTour && (
+          <button
+            onClick={() => { onReplayTour(); if (onToggle) onToggle(); }}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200 cursor-pointer mb-1"
+            style={{ color: 'var(--teal, #14B8A6)' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(20,184,166,0.10)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+          >
+            <i className="fas fa-circle-question w-5 text-center text-xs" />
+            <span>Replay Tutorial</span>
+          </button>
+        )}
         <button
           onClick={() => showConfirm('Logout', 'Are you sure you want to log out?', onLogout)}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200 cursor-pointer"
