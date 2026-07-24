@@ -113,7 +113,7 @@ export default function StaffTour({ show, onComplete }) {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 10000 }} ref={overlayRef}>
       <div
-        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)' }}
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(1px)' }}
         onClick={skip}
       />
 
@@ -127,7 +127,7 @@ export default function StaffTour({ show, onComplete }) {
             height: highlight.height + 12,
             border: '2px solid var(--teal, #14B8A6)',
             borderRadius: 12,
-            boxShadow: '0 0 0 4000px rgba(0,0,0,0.5)',
+            boxShadow: '0 0 0 4000px rgba(0,0,0,0.25)',
             transition: 'all 0.3s ease',
             zIndex: 10000,
             pointerEvents: 'none',
